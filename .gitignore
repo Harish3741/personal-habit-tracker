@@ -1,0 +1,24 @@
+node_modules/
+.next/
+out/
+build/
+
+# Local config — contains published iCloud calendar URLs.
+# Anyone holding one of those URLs can read that calendar, so they must never
+# be committed.
+.env
+.env.local
+.env*.local
+
+# SQLite database: local events, habits, completions, cached calendar data.
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+.DS_Store
+*.log
+
+# tsc output for the test build
+.test-build/
+tsconfig.tsbuildinfo
+*.tsbuildinfo

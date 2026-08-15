@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+/*
+ * Dark-only palette, tuned to the macOS Calendar month view in the reference
+ * screenshot: near-black canvas, hairline grid, raised event cards.
+ */
+:root {
+  --bg: #131313;
+  --surface: #1a1a1a;
+  --card: #2e2e2e;
+  --card-hover: #383838;
+  --border: #2a2a2a;
+  --text: #f2f2f2;
+  --text-muted: #8d8d8d;
+  --text-faint: #5c5c5c;
+  --accent: #e8674a;
+  --focus: #5b8def;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-faint: var(--text-faint);
+  --color-accent: var(--accent);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+button {
+  cursor: pointer;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Thin scrollbars inside day cells and panels. */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #3a3a3a transparent;
+}
+.scroll-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+  border-radius: 3px;
+}
+.scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* The "+" affordance that appears on a day cell when hovered. */
+.day-cell .day-add {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.day-cell:hover .day-add,
+.day-cell:focus-within .day-add {
+  opacity: 1;
+}
+
+.dragging {
+  opacity: 0.35;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pop-in {
+  animation: pop-in 140ms ease-out;
+}
