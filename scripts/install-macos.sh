@@ -59,8 +59,8 @@ cat > "$PLIST" <<PLIST_EOF
     <string>production</string>
     <key>PORT</key>
     <string>$PORT</string>
-    <!-- Loopback only: the tunnel script proxies to this, and binding to
-         0.0.0.0 would expose the app to every device on the local network. -->
+    <!-- Loopback only: binding to 0.0.0.0 would expose the app, and the
+         calendar data behind it, to every device on the local network. -->
     <key>HOST</key>
     <string>127.0.0.1</string>
   </dict>
@@ -90,9 +90,7 @@ for _ in $(seq 1 20); do
   if curl -fsS -o /dev/null "http://127.0.0.1:$PORT/"; then
     echo "Running at http://localhost:$PORT"
     echo
-    echo "Next steps:"
-    echo "  - Safari -> open that URL -> File -> Add to Dock for an app icon"
-    echo "  - ./scripts/tunnel-macos.sh to reach it from your phone over Tailscale"
+    echo "Next: open that URL in Safari, then File -> Add to Dock for an app icon."
     exit 0
   fi
   sleep 1

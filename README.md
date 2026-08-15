@@ -26,16 +26,6 @@ Weeks run Monday–Sunday; dates render in `APP_TZ` (default `Australia/Sydney`)
 
 ## Setup
 
-One command does everything automatable — installs Tailscale if needed, builds,
-installs the launchd agent, and publishes to your tailnet. It pauses at the
-steps that need you (Tailscale sign-in, two admin-console toggles):
-
-```bash
-./scripts/setup.sh
-```
-
-Safe to re-run. Or do it by hand:
-
 ```bash
 npm install
 cp .env.example .env.local     # optional — you can add calendars in the UI instead
@@ -63,37 +53,8 @@ an app icon and a chromeless window.
 
 Remove it with `./scripts/install-macos.sh --uninstall`.
 
-The server binds to `127.0.0.1` only, so it is not reachable from other devices
-on your network — including shared wifi. Use the tunnel below to reach it from
-your phone.
-
-## Reach it from your phone
-
-```bash
-./scripts/tunnel-macos.sh            # start sharing
-./scripts/tunnel-macos.sh --status   # show the URL
-./scripts/tunnel-macos.sh --off      # stop sharing
-```
-
-This uses Tailscale Serve: HTTPS terminates on your Mac's tailnet name and
-proxies to the loopback port. Only devices signed into your Tailscale account
-can reach it, and the app stays bound to `127.0.0.1` throughout.
-
-One-time setup:
-
-1. `brew install --cask tailscale` (or the Mac App Store build), open it, sign in.
-2. In the [admin console](https://login.tailscale.com/admin/dns), enable
-   **MagicDNS** and **HTTPS Certificates**. Serve needs both.
-3. Install Tailscale on your phone and sign in with the same account.
-4. Run the script, then open the printed `https://<machine>.<tailnet>.ts.net/`
-   URL on your phone. *Add to Home Screen* gives it an app icon.
-
-Sharing persists across reboots — `--off` is the only thing that stops it.
-
-> The app has no login of its own, so **your tailnet is the authentication
-> boundary**. Do not expose it with `tailscale funnel`, a Cloudflare quick
-> tunnel, or port forwarding: any of those put your entire calendar on a public
-> URL that anyone holding the link can read.
+The server binds to `127.0.0.1`, so it is reachable from this Mac only — not
+from other devices on the network, including shared wifi.
 
 ## Goal types
 
