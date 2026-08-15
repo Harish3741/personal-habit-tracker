@@ -118,7 +118,7 @@ function DayCell({
 
       <div
         ref={listRef}
-        className="scroll-thin flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-1.5 pt-1"
+        className="scroll-thin relative flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-1.5 pt-1"
       >
         {occurrences.map((occurrence) => (
           <EventCard
@@ -160,6 +160,11 @@ function useHiddenCount(ref: React.RefObject<HTMLDivElement | null>, total: numb
     const node = ref.current;
     if (!node) return;
 
+    // Layout metrics, deliberately not getBoundingClientRect: cards run a
+    // translate/scale entry animation, and rects include transforms, so a card
+    // measured mid-animation reads as overflowing when it actually fits. The
+    // list is `relative` so it is the offsetParent — otherwise offsetTop would
+    // resolve against the day cell and include the day-number header.
     const measure = () => {
       const limit = node.clientHeight + node.scrollTop;
       let visible = 0;
