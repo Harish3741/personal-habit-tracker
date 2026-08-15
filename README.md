@@ -26,6 +26,16 @@ Weeks run Monday–Sunday; dates render in `APP_TZ` (default `Australia/Sydney`)
 
 ## Setup
 
+One command does everything automatable — installs Tailscale if needed, builds,
+installs the launchd agent, and publishes to your tailnet. It pauses at the
+steps that need you (Tailscale sign-in, two admin-console toggles):
+
+```bash
+./scripts/setup.sh
+```
+
+Safe to re-run. Or do it by hand:
+
 ```bash
 npm install
 cp .env.example .env.local     # optional — you can add calendars in the UI instead

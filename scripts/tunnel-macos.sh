@@ -14,27 +14,9 @@
 #
 set -euo pipefail
 
-PORT="${PORT:-4321}"
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-# The CLI lives in different places depending on how Tailscale was installed:
-# the App Store build hides it inside the .app bundle, Homebrew puts it on PATH.
-find_tailscale() {
-  if command -v tailscale >/dev/null 2>&1; then
-    command -v tailscale
-    return 0
-  fi
-  local candidate
-  for candidate in \
-    /Applications/Tailscale.app/Contents/MacOS/Tailscale \
-    /opt/homebrew/bin/tailscale \
-    /usr/local/bin/tailscale; do
-    if [[ -x "$candidate" ]]; then
-      echo "$candidate"
-      return 0
-    fi
-  done
-  return 1
-}
+PORT="${PORT:-4321}"
 
 if ! TS="$(find_tailscale)"; then
   cat >&2 <<'EOF'
