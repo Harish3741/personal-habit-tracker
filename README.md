@@ -24,6 +24,25 @@ Everything runs on your Mac. Nothing is written back to iCloud, ever.
 
 Weeks run Monday–Sunday; dates render in `APP_TZ` (default `Australia/Sydney`).
 
+## To-do board
+
+Above the calendar sits a seven-day board: columns run **yesterday → five days
+ahead** and do not follow the calendar's navigation, so browsing to next month
+never moves it off today.
+
+Each column mixes two things:
+
+- **Events**, pulled automatically from your calendars. Ticking one here is the
+  same completion the calendar card shows.
+- **Tasks**, free text you type into the column. They live only in this app —
+  a task never becomes a calendar event and never reaches iCloud.
+
+Unfinished tasks dated before the window carry into the first column marked
+`↩`, so nothing silently scrolls out of reach.
+
+Every event is tickable, not only habit-matching ones, but **only habit matches
+move habit progress** — ticking "Dentist" does not inflate any goal.
+
 ## Setup
 
 ```bash

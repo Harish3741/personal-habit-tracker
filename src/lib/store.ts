@@ -488,9 +488,10 @@ function daysApart(from: string, to: string): number {
 /* ---------------------------------------------------------------- completions */
 
 /**
- * Tick or untick an event. Only events matching a habit can be ticked — the
- * checkbox is the sole way a habit gets credited, so there is no separate
- * habit-level logging path.
+ * Tick or untick an event. Any event can be ticked — the to-do board treats
+ * meetings and appointments as work items too — but only events matching a
+ * habit carry a habit_id, and only those move habit progress. Ticking is still
+ * the sole way a habit gets credited; there is no habit-level logging path.
  */
 export function setCompletion(occurrenceKey: string, completed: boolean): void {
   const conn = db();
@@ -514,7 +515,6 @@ export function setCompletion(occurrenceKey: string, completed: boolean): void {
   if (!row) throw new Error("Event not found");
 
   const habit = matchHabit(habits, row.title, row.calendarId);
-  if (!habit) throw new Error("This event does not match a tracked habit");
 
   conn
     .prepare(
@@ -522,7 +522,7 @@ export function setCompletion(occurrenceKey: string, completed: boolean): void {
        VALUES (?, ?, ?, ?)
        ON CONFLICT(occurrence_key) DO UPDATE SET habit_id = excluded.habit_id, ymd = excluded.ymd`,
     )
-    .run(occurrenceKey, habit.id, row.ymd, nowIso());
+    .run(occurrenceKey, habit?.id ?? null, row.ymd, nowIso());
 }
 
 /* ------------------------------------------------------------------ progress */
@@ -609,4 +609,75 @@ export function titleSuggestions(calendarId: string | null): { title: string; co
           .all()
   ) as { title: string; count: number }[];
   return rows;
+}
+
+/* --------------------------------------------------------------------- tasks */
+
+export type TaskRecord = {
+  id: string;
+  ymd: string;
+  title: string;
+  done: boolean;
+  position: number;
+};
+
+type TaskRow = Omit<TaskRecord, "done"> & { done: number };
+
+/**
+ * Tasks in a date range, plus any unfinished task from before it.
+ *
+ * The board window rolls forward daily, so without the carry-over an undone
+ * task would silently scroll out of reach. Carried tasks surface in the first
+ * column, still carrying their original date.
+ */
+export function listTasks(fromYmd: string, toYmd: string): TaskRecord[] {
+  const rows = db()
+    .prepare(
+      `SELECT id, ymd, title, done, position FROM tasks
+        WHERE (ymd BETWEEN @from AND @to)
+           OR (ymd < @from AND done = 0)
+        ORDER BY ymd, position, rowid`,
+    )
+    .all({ from: fromYmd, to: toYmd }) as TaskRow[];
+  return rows.map((r) => ({ ...r, done: !!r.done }));
+}
+
+export function createTask(input: { ymd: string; title: string }): TaskRecord {
+  const conn = db();
+  const max = conn
+    .prepare("SELECT COALESCE(MAX(position), -1) AS p FROM tasks WHERE ymd = ?")
+    .get(input.ymd) as { p: number };
+  const id = newId();
+  conn
+    .prepare(
+      "INSERT INTO tasks (id, ymd, title, done, position, created_at) VALUES (?, ?, ?, 0, ?, ?)",
+    )
+    .run(id, input.ymd, input.title.trim(), max.p + 1, nowIso());
+  return { id, ymd: input.ymd, title: input.title.trim(), done: false, position: max.p + 1 };
+}
+
+export function updateTask(
+  id: string,
+  patch: { title?: string; done?: boolean; ymd?: string },
+): void {
+  const sets: string[] = [];
+  const params: Record<string, unknown> = { id };
+  if (patch.title !== undefined) {
+    sets.push("title = @title");
+    params.title = patch.title.trim();
+  }
+  if (patch.ymd !== undefined) {
+    sets.push("ymd = @ymd");
+    params.ymd = patch.ymd;
+  }
+  if (patch.done !== undefined) {
+    sets.push("done = @done");
+    params.done = patch.done ? 1 : 0;
+  }
+  if (!sets.length) return;
+  db().prepare(`UPDATE tasks SET ${sets.join(", ")} WHERE id = @id`).run(params);
+}
+
+export function deleteTask(id: string): void {
+  db().prepare("DELETE FROM tasks WHERE id = ?").run(id);
 }

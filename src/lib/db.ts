@@ -25,6 +25,7 @@ export function db(): Database.Database {
   conn.pragma("journal_mode = WAL");
   conn.pragma("foreign_keys = ON");
   migrate(conn);
+  relaxCompletionHabit(conn);
   seedCalendarsFromEnv(conn);
   instance = conn;
   return conn;
@@ -94,15 +95,29 @@ function migrate(conn: Database.Database) {
       position     INTEGER NOT NULL DEFAULT 0
     );
 
-    -- One row per ticked event. The event checkbox is the only way a habit
-    -- gets credited, so this table is keyed by occurrence, not by habit+day.
+    -- One row per ticked event. Ticking an event is the only way a habit gets
+    -- credited, so this is keyed by occurrence, not by habit+day. habit_id is
+    -- null for ticked events that match no habit — those are just to-dos.
     CREATE TABLE IF NOT EXISTS completions (
       occurrence_key TEXT PRIMARY KEY,
-      habit_id       TEXT NOT NULL REFERENCES habits(id) ON DELETE CASCADE,
+      habit_id       TEXT REFERENCES habits(id) ON DELETE CASCADE,
       ymd            TEXT NOT NULL,
       created_at     TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS completions_habit_ymd ON completions(habit_id, ymd);
+
+    -- Free-text to-dos on the board. Purely local: they are never events,
+    -- never reach iCloud, and never appear on the calendar grid.
+    CREATE TABLE IF NOT EXISTS tasks (
+      id         TEXT PRIMARY KEY,
+      ymd        TEXT NOT NULL,
+      title      TEXT NOT NULL,
+      done       INTEGER NOT NULL DEFAULT 0,
+      position   INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS tasks_ymd ON tasks(ymd);
+    CREATE INDEX IF NOT EXISTS tasks_open ON tasks(done, ymd);
 
     CREATE TABLE IF NOT EXISTS sync_state (
       calendar_id  TEXT PRIMARY KEY REFERENCES calendars(id) ON DELETE CASCADE,
@@ -111,6 +126,35 @@ function migrate(conn: Database.Database) {
       last_error   TEXT
     );
   `);
+}
+
+/**
+ * Any event can be ticked now, not just habit-matching ones, so completions
+ * carry a nullable habit_id. SQLite cannot drop a NOT NULL constraint in
+ * place, so rebuild the table when an older database is opened.
+ */
+function relaxCompletionHabit(conn: Database.Database) {
+  const columns = conn.prepare("PRAGMA table_info(completions)").all() as {
+    name: string;
+    notnull: number;
+  }[];
+  const habitId = columns.find((c) => c.name === "habit_id");
+  if (!habitId || habitId.notnull === 0) return;
+
+  conn.transaction(() => {
+    conn.exec(`
+      CREATE TABLE completions_new (
+        occurrence_key TEXT PRIMARY KEY,
+        habit_id       TEXT REFERENCES habits(id) ON DELETE CASCADE,
+        ymd            TEXT NOT NULL,
+        created_at     TEXT NOT NULL
+      );
+      INSERT INTO completions_new SELECT occurrence_key, habit_id, ymd, created_at FROM completions;
+      DROP TABLE completions;
+      ALTER TABLE completions_new RENAME TO completions;
+      CREATE INDEX IF NOT EXISTS completions_habit_ymd ON completions(habit_id, ymd);
+    `);
+  })();
 }
 
 const DEFAULT_COLORS: Record<string, string> = {

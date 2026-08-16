@@ -14,6 +14,7 @@ import {
 import MonthGrid from "./MonthGrid";
 import WeekGrid from "./WeekGrid";
 import Sidebar from "./Sidebar";
+import TodoBoard from "./TodoBoard";
 import EventDialog, { type EventDialogTarget } from "./EventDialog";
 import HabitDialog from "./HabitDialog";
 import CalendarsDialog from "./CalendarsDialog";
@@ -77,14 +78,22 @@ export default function CalendarApp({ initial }: { initial: CalendarState }) {
       occurrences: prev.occurrences.map((o) =>
         o.key === occurrence.key ? { ...o, completed } : o,
       ),
+      board: {
+        ...prev.board,
+        occurrences: prev.board.occurrences.map((o) =>
+          o.key === occurrence.key ? { ...o, completed } : o,
+        ),
+      },
     }));
     const res = await fetch("/api/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ key: occurrence.key, completed }),
     });
-    if (!res.ok) await refresh();
-    else await refresh(); // pull recomputed weekly progress
+    // Refetch either way: on success for recomputed progress, on failure to
+    // roll the optimistic tick back.
+    await refresh();
+    void res;
   }
 
   async function onDragEnd(event: DragEndEvent) {
@@ -156,6 +165,16 @@ export default function CalendarApp({ initial }: { initial: CalendarState }) {
         />
 
         <main className="flex min-w-0 flex-1 flex-col">
+          <TodoBoard
+            days={state.board.days}
+            today={state.today}
+            occurrences={state.board.occurrences}
+            tasks={state.board.tasks}
+            calendarsById={calendarsById}
+            onToggleEvent={toggleCompletion}
+            onChanged={() => refresh()}
+          />
+
           <header className="flex items-center gap-3 px-5 py-3.5">
             <h1 className="text-[22px] font-semibold tracking-tight">
               {view === "month" ? monthLabel(anchor) : weekLabel(anchor)}

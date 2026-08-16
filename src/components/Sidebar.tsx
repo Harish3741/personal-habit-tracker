@@ -191,7 +191,7 @@ function HabitRow({ entry, onEdit }: { entry: HabitProgress; onEdit: () => void 
       <div className="mt-1 flex items-center gap-2 text-[11px] text-[var(--text-faint)]">
         {streak > 0 && <span>{streak}-day streak</span>}
         {planned > 0 && <span>{planned} planned</span>}
-        {streak === 0 && planned === 0 && !met && <span>Nothing ticked yet</span>}
+        {done === 0 && planned === 0 && <span>Nothing ticked yet</span>}
         {met && <span style={{ color: habit.color }}>Goal met</span>}
       </div>
     </button>
