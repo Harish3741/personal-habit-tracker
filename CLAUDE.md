@@ -3,10 +3,18 @@
 ## Always end with the local link
 
 After every change, finish the reply with the command to run the app and the
-URL, so it can be opened without hunting for it:
+URL, so it can be opened without hunting for it.
+
+The work lives on a feature branch, not `main`, so a bare `git pull` fetches
+nothing — always give the branch explicitly, and always `cd` into the repo
+first (a bare `git pull` in the home directory hits the dotfiles repo instead):
 
 ```bash
-git pull && npm install && npm run dev
+cd ~/personal-habit-tracker
+git fetch origin claude/habit-tracker-icalendar-w6bid5
+git checkout claude/habit-tracker-icalendar-w6bid5
+git pull origin claude/habit-tracker-icalendar-w6bid5
+npm install && npm run dev
 ```
 
 → **http://localhost:4321**
